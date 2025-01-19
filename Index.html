@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BNG Loyalty Program</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>BNG Loyalty Program</h1>
+
+    <h2>Sign Up</h2>
+    <form id="signupForm">
+      <input type="email" id="email" placeholder="Email" required>
+      <input type="password" id="password" placeholder="Password" required>
+      <input type="text" id="referralCode" placeholder="Referral Code (optional)">
+      <button type="submit">Sign Up</button>
+    </form>
+
+    <h2>Login</h2>
+    <form id="loginForm">
+      <input type="email" id="loginEmail" placeholder="Email" required>
+      <input type="password" id="loginPassword" placeholder="Password" required>
+      <button type="submit">Login</button>
+    </form>
+
+    <h2>Log Ride</h2>
+    <form id="logRideForm">
+      <input type="number" id="ridePoints" placeholder="Ride Points" required>
+      <button type="submit">Log Ride</button>
+    </form>
+
+    <div id="userDashboard" style="display: none;">
+      <h3>Welcome <span id="userEmail"></span></h3>
+      <p>Points: <span id="userPoints"></span></p>
+      <p>Tier: <span id="userTier"></span></p>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script>
+    const signupForm = document.getElementById('signupForm');
+    const loginForm = document.getElementById('loginForm');
+    const logRideForm = document.getElementById('logRideForm');
+    const userDashboard = document.getElementById('userDashboard');
+    const userEmail = document.getElementById('userEmail');
+    const userPoints = document.getElementById('userPoints');
+    const userTier = document.getElementById('userTier');
+    
+    // Sign up
+    signupForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const referralCode = document.getElementById('referralCode').value;
+
+      try {
+        const response = await axios.post('http://localhost:5000/signup', { email, password, referralCode });
+        localStorage.setItem('jwtToken', response.data.token);
+        alert('Signup successful!');
+      } catch (err) {
+        alert('Error: ' + err.response.data);
+      }
+    });
+
+    // Login
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+
+      try {
+        const response = await axios.post('http://localhost:5000/login', { email, password });
+        localStorage.setItem('jwtToken', response.data.token);
+        alert('Login successful!');
+        loadDashboard();
+      } catch (err) {
+        alert('Error: ' + err.response.data);
+      }
+    });
+
+    // Log ride
+    logRideForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const points = document.getElementById('ridePoints').value;
+
+      const token = localStorage.getItem('jwtToken');
+      if (!token) {
+        alert('Please log in first!');
+        return;
+      }
+
+      try {
+        const response = await axios.post('http://localhost:5000/logRide', { points }, {
+          headers: { Authorization: token }
+        });
+        alert('Ride logged successfully!');
+        loadDashboard();
+      } catch (err) {
+        alert('Error: ' + err.response.data);
+      }
+    });
+
+    // Load dashboard
+    async function loadDashboard() {
+      const token = localStorage.getItem('jwtToken');
+      if (!token) {
+        alert('Please log in first!');
+        return;
+      }
+
+      try {
+        const response = await axios.get('http://localhost:5000/dashboard', {
+          headers: { Authorization: token }
+        });
+        userDashboard.style.display = 'block';
+        userEmail.innerText = response.data.email;
+        userPoints.innerText = response.data.points;
+        userTier.innerText = response.data.tier;
+      } catch (err) {
+        alert('Error: ' + err.response.data);
+      }
+    }
+  </script>
+</body>
+</html>
